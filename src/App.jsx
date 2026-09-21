@@ -6,6 +6,7 @@ import ProfilePage from "./features/profile/ProfilePage";
 import TravelItineraryPage from "./features/planning/TravelItineraryPage";
 import LocationsDiscovered from "./features/planning/LocationsDiscovered";
 import YourFavorites from "./features/wishlist/YourFavorites";
+import PlanLoading from "./features/planning/PlanLoading";
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
           <Route path="/location" element={<LocationsDiscovered />} />
           <Route path="/favorites" element={<YourFavorites />} />
         </Route>
+
+        <Route path="/loading" element={<PlanLoading/>}/>
 
       </Routes>
     </>

@@ -9,21 +9,21 @@ const STEPS = [
     title: "Suallara cavab ver",
     description:
       "Maraq dairən, kiminlə getdiyin və büdcən haqqında qısa sual-cavab",
-    bgColor: "bg-blue-50", 
+    bgColor: "bg-[#EAF0FE]", 
     icon: comment
   },
   {
     id: 2,
     title: "AI planını hazırlayır",
     description: "Süni intellekt sənə uyğun fərdi səyahət planı yaradır",
-    bgColor: "bg-amber-100",
+    bgColor: "bg-[#F2C230]",
     icon: star,
   },
   {
     id: 3,
     title: "Planını yadda saxla",
     description: "Bəyəndiyini seçib hesabında saxla, istədiyin vaxt bax",
-    bgColor: "bg-emerald-100",
+    bgColor: "bg-[#3DBE7A]",
     icon: save,
   },
 ];

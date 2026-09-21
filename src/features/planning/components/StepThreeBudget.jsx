@@ -1,12 +1,14 @@
-
+import medium from "../../../assets/medium.png"
+import comfort from "../../../assets/comfort.png"
+import premium from "../../../assets/premium.png"
 
 
 function StepThreeBudget({ formData, setFormData }) {
 
   const budgets = [
-    { id: "medium", label: "Orta", price: "800 - 1200 AZN", icon: "💰" },
-    { id: "comfort", label: "Rahat", price: "1200 - 2000 AZN", icon: "💎" },
-    { id: "premium", label: "Premium", price: "2000+ AZN", icon: "👑" },
+    { id: "medium", label: "Orta", price: "800 - 1200 AZN", icon: medium },
+    { id: "comfort", label: "Rahat", price: "1200 - 2000 AZN", icon: comfort },
+    { id: "premium", label: "Premium", price: "2000+ AZN", icon: premium },
   ];
 
   return (
@@ -30,7 +32,7 @@ function StepThreeBudget({ formData, setFormData }) {
                 : "border-slate-200 bg-white hover:border-slate-300"
             }`}
           >
-            <span className="text-2xl mb-1">{b.icon}</span>
+            <img src={b.icon} className="mb-1" alt="" />
             <span className="text-sm font-bold text-slate-800">{b.label}</span>
             <span className="text-xs text-slate-400 mt-1">{b.price}</span>
           </button>

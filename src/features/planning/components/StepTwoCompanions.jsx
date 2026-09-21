@@ -1,9 +1,15 @@
+import solo from "../../../assets/solo.png"
+import couple from "../../../assets/couple.png"
+import friends from "../../../assets/friends.png"
+import family from "../../../assets/family.png"
+
+
 function StepTwoCompanions({ formData, setFormData }) {
   const options = [
-    { id: "solo", label: "Tək", icon: "👤" },
-    { id: "couple", label: "Cütlük", icon: "👩‍❤️‍👨" },
-    { id: "friends", label: "Dostlar", icon: "👥" },
-    { id: "family", label: "Ailə", icon: "👨‍👩‍👧‍👦" },
+    { id: "solo", label: "Tək", icon: solo },
+    { id: "couple", label: "Cütlük", icon: couple },
+    { id: "friends", label: "Dostlar", icon: friends },
+    { id: "family", label: "Ailə", icon: family },
   ];
 
   const handleCompanionChange = (id) => {
@@ -105,9 +111,8 @@ function StepTwoCompanions({ formData, setFormData }) {
                 }
               `}
             >
-              <span className="text-2xl mb-2">
-                {opt.icon}
-              </span>
+
+              <img src={opt.icon} className="mb-2" alt="" />
 
               <span className="text-xs font-semibold text-slate-800">
                 {opt.label}

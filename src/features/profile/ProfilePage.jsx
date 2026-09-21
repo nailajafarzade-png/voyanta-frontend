@@ -1,3 +1,7 @@
+import lock from "../../assets/lock.png"
+import account from "../../assets/account.png"
+import profil from "../../assets/profil.png"
+
 
 function ProfilePage() {
     const user = {
@@ -86,7 +90,7 @@ function ProfilePage() {
                 className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">👤</span>
+                 <img src={profil} alt="" />
                   <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
                     Şəxsi məlumatlar
                   </span>
@@ -101,7 +105,7 @@ function ProfilePage() {
                 className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">🔒</span>
+                  <img src={lock} alt="" />
                   <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
                     Şifrə və təhlükəsizlik
                   </span>
@@ -126,7 +130,7 @@ function ProfilePage() {
                 className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">🚪</span>
+                  <img src={account} alt="" />
                   <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
                     Hesabdan çıxış
                   </span>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import PlanningPage from "./PlanningPage";
+import BudgetSummary from "./travelinfo/BudgetSummary";
 
 function TravelItineraryPage() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -45,7 +46,6 @@ function TravelItineraryPage() {
                 </div>
               </div>
 
-             
               <button
                 type="button"
                 onClick={() => setIsWizardOpen(true)}
@@ -142,6 +142,7 @@ function TravelItineraryPage() {
               </div>
             </div>
           </div>
+          <BudgetSummary />
         </div>
       </div>
     </div>
