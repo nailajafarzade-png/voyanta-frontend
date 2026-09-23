@@ -14,6 +14,7 @@ function App() {
   return (
     <>
       {/* Daxil olanda wishlist-i backend-dən yükləyir, çıxanda təmizləyir */}
+      {/* deyişiklik */}
       <WishlistSync />
 
       <Routes>
