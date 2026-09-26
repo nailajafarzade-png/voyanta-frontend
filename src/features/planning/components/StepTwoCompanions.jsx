@@ -1,316 +1,146 @@
-import solo from "../../../assets/solo.png"
-import couple from "../../../assets/couple.png"
-import friends from "../../../assets/friends.png"
-import family from "../../../assets/family.png"
+import solo from "../../../assets/solo.png";
+import couple from "../../../assets/couple.png";
+import friends from "../../../assets/friends.png";
+import family from "../../../assets/family.png";
+import OptionGrid from "./OptionGrid";
+import StepShell from "./StepShell";
 
+const COMPANIONS = [
+  { id: "solo", title: "Tək", subtitle: "1 nəfər", icon: solo },
+  { id: "couple", title: "Cütlük", subtitle: "2 nəfər", icon: couple },
+  { id: "friends", title: "Dostlar", subtitle: "Qrupla", icon: friends },
+  { id: "family", title: "Ailə", subtitle: "Böyüklər + uşaqlar", icon: family },
+];
+
+/** "−" / "+" düyməli rəqəm sayğacı. */
+function Counter({ label, hint, value, onDecrease, onIncrease, canDecrease }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-3.5">
+      <div className="flex min-w-0 flex-col">
+        <span className="text-sm font-bold text-ink-900">{label}</span>
+        {hint && <span className="mt-0.5 text-xs text-ink-400">{hint}</span>}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-2">
+        <button
+          type="button"
+          onClick={onDecrease}
+          disabled={!canDecrease}
+          aria-label={`${label} azalt`}
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-base font-bold text-ink-700 transition-all duration-200 hover:bg-slate-200 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          −
+        </button>
+
+        <span className="min-w-[24px] text-center text-sm font-extrabold text-ink-900">
+          {value}
+        </span>
+
+        <button
+          type="button"
+          onClick={onIncrease}
+          aria-label={`${label} artır`}
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-base font-bold text-white transition-all duration-200 hover:bg-brand-600 active:scale-90"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function StepTwoCompanions({ formData, setFormData }) {
-  const options = [
-    { id: "solo", label: "Tək", icon: solo },
-    { id: "couple", label: "Cütlük", icon: couple },
-    { id: "friends", label: "Dostlar", icon: friends },
-    { id: "family", label: "Ailə", icon: family },
-  ];
+  const { adults, children, peopleCount } = formData;
 
   const handleCompanionChange = (id) => {
     setFormData({
       ...formData,
       companion: id,
-      peopleCount:
-        id === "solo"
-          ? 1
-          : id === "couple"
-          ? 2
-          : formData.peopleCount || 2,
+      peopleCount: id === "solo" ? 1 : id === "couple" ? 2 : formData.peopleCount || 2,
     });
   };
 
-  const decreasePeople = () => {
-    setFormData({
-      ...formData,
-      peopleCount: Math.max(2, formData.peopleCount - 1),
-    });
-  };
+  const update = (patch) => setFormData({ ...formData, ...patch });
 
-  const increasePeople = () => {
-    setFormData({
-      ...formData,
-      peopleCount: formData.peopleCount + 1,
-    });
-  };
-
-  const decreaseAdults = () => {
-    setFormData({
-      ...formData,
-      adults: Math.max(1, formData.adults - 1),
-      peopleCount: Math.max(1, formData.adults - 1) + formData.children,
-    });
-  };
-
-  const increaseAdults = () => {
-    setFormData({
-      ...formData,
-      adults: formData.adults + 1,
-      peopleCount: formData.adults + 1 + formData.children,
-    });
-  };
-
-  const decreaseChildren = () => {
-    setFormData({
-      ...formData,
-      children: Math.max(0, formData.children - 1),
-      peopleCount: formData.adults + Math.max(0, formData.children - 1),
-    });
-  };
-
-  const increaseChildren = () => {
-    setFormData({
-      ...formData,
-      children: formData.children + 1,
-      peopleCount: formData.adults + formData.children + 1,
-    });
-  };
-
-  const showPeopleCounter =
-    formData.companion === "friends" ||
-    formData.companion === "family";
+  const showPeopleCounter = formData.companion === "friends" || formData.companion === "family";
 
   return (
-    <div className="flex flex-col items-center text-center w-full">
-      <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-        Bu səyahətə kiminlə gedirsən?
-      </h2>
+    <StepShell
+      title="Bu səyahətə kiminlə gedirsən?"
+      description="Planı sənə uyğun fərdiləşdirmək üçün seç."
+    >
+      <OptionGrid
+        ariaLabel="Səyahət yoldaşları"
+        columns="grid-cols-2 sm:grid-cols-4"
+        options={COMPANIONS}
+        value={formData.companion}
+        onSelect={handleCompanionChange}
+      />
 
-      <p className="text-sm text-slate-500 mb-6">
-        Planı sənə uyğun fərdiləşdirmək üçün seç.
-      </p>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-xl mb-4">
-        {options.map((opt) => {
-          const isSelected = formData.companion === opt.id;
-
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => handleCompanionChange(opt.id)}
-              className={`
-                flex
-                flex-col
-                items-center
-                justify-center
-                p-4
-                rounded-2xl
-                border
-                transition-all
-                duration-200
-                ${
-                  isSelected
-                    ? "border-[#5B8DEF] bg-blue-50 shadow-sm"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                }
-              `}
-            >
-
-              <img src={opt.icon} className="mb-2" alt="" />
-
-              <span className="text-xs font-semibold text-slate-800">
-                {opt.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
+      {/* sayğaclar */}
       {showPeopleCounter && (
-        <>
+        <div className="mx-auto mt-6 w-full max-w-xl divide-y divide-slate-100 rounded-2xl border border-brand-100 bg-brand-50/50 px-5 text-left">
           {formData.companion === "family" ? (
-            <div className="w-full max-w-xl bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mt-2">
-              <div className="flex flex-col gap-4">
+            <>
+              <Counter
+                label="Böyüklər"
+                hint="18 yaş və yuxarı"
+                value={adults}
+                canDecrease={adults > 1}
+                onDecrease={() =>
+                  update({
+                    adults: Math.max(1, adults - 1),
+                    peopleCount: Math.max(1, adults - 1) + children,
+                  })
+                }
+                onIncrease={() =>
+                  update({ adults: adults + 1, peopleCount: adults + 1 + children })
+                }
+              />
 
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-semibold text-slate-800">
-                      👨 Böyüklər
-                    </span>
-
-                    <span className="text-xs text-slate-400 mt-1">
-                      18 yaş və yuxarı
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-100">
-                    <button
-                      type="button"
-                      onClick={decreaseAdults}
-                      disabled={formData.adults <= 1}
-                      className="
-                        w-7
-                        h-7
-                        rounded-full
-                        bg-slate-100
-                        text-slate-700
-                        font-bold
-                        hover:bg-slate-200
-                        disabled:opacity-40
-                        disabled:cursor-not-allowed
-                        transition
-                      "
-                    >
-                      −
-                    </button>
-
-                    <span className="min-w-[24px] text-center text-sm font-bold text-slate-900">
-                      {formData.adults}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={increaseAdults}
-                      className="
-                        w-7
-                        h-7
-                        rounded-full
-                        bg-slate-100
-                        text-slate-700
-                        font-bold
-                        hover:bg-slate-200
-                        transition
-                      "
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-semibold text-slate-800">
-                      👶 Uşaqlar
-                    </span>
-
-                    <span className="text-xs text-slate-400 mt-1">
-                      18 yaşdan kiçik
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-100">
-                    <button
-                      type="button"
-                      onClick={decreaseChildren}
-                      disabled={formData.children <= 0}
-                      className="
-                        w-7
-                        h-7
-                        rounded-full
-                        bg-slate-100
-                        text-slate-700
-                        font-bold
-                        hover:bg-slate-200
-                        disabled:opacity-40
-                        disabled:cursor-not-allowed
-                        transition
-                      "
-                    >
-                      −
-                    </button>
-
-                    <span className="min-w-[24px] text-center text-sm font-bold text-slate-900">
-                      {formData.children}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={increaseChildren}
-                      className="
-                        w-7
-                        h-7
-                        rounded-full
-                        bg-slate-100
-                        text-slate-700
-                        font-bold
-                        hover:bg-slate-200
-                        transition
-                      "
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-blue-100 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Ümumi səyahətçi
-                  </span>
-
-                  <span className="text-sm font-bold text-[#5B8DEF]">
-                    {formData.adults + formData.children} nəfər
-                  </span>
-                </div>
-
-              </div>
-            </div>
+              <Counter
+                label="Uşaqlar"
+                hint="18 yaşdan kiçik"
+                value={children}
+                canDecrease={children > 0}
+                onDecrease={() =>
+                  update({
+                    children: Math.max(0, children - 1),
+                    peopleCount: adults + Math.max(0, children - 1),
+                  })
+                }
+                onIncrease={() =>
+                  update({ children: children + 1, peopleCount: adults + children + 1 })
+                }
+              />
+            </>
           ) : (
-            <div className="w-full max-w-xl bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mt-2">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-semibold text-slate-800">
-                    👥 Neçə nəfərsiniz?
-                  </span>
-
-                  <span className="text-xs text-slate-400 mt-1">
-                    Səyahət planını buna uyğun hazırlayacağıq.
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-100">
-                  <button
-                    type="button"
-                    onClick={decreasePeople}
-                    disabled={formData.peopleCount <= 2}
-                    className="
-                      w-7
-                      h-7
-                      rounded-full
-                      bg-slate-100
-                      text-slate-700
-                      font-bold
-                      hover:bg-slate-200
-                      disabled:opacity-40
-                      disabled:cursor-not-allowed
-                      transition
-                    "
-                  >
-                    −
-                  </button>
-
-                  <span className="min-w-[24px] text-center text-sm font-bold text-slate-900">
-                    {formData.peopleCount}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={increasePeople}
-                    className="
-                      w-7
-                      h-7
-                      rounded-full
-                      bg-slate-100
-                      text-slate-700
-                      font-bold
-                      hover:bg-slate-200
-                      transition
-                    "
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
+            <Counter
+              label="Neçə nəfərsiniz?"
+              hint="Səyahət planını buna uyğun hazırlayacağıq."
+              value={peopleCount}
+              canDecrease={peopleCount > 2}
+              onDecrease={() => update({ peopleCount: Math.max(2, peopleCount - 1) })}
+              onIncrease={() => update({ peopleCount: peopleCount + 1 })}
+            />
           )}
-        </>
+        </div>
       )}
-    </div>
+
+      {/* seçilmiş kompaniya üzrə xülasə */}
+      {formData.companion && (
+        <p className="mt-5 text-sm font-semibold text-brand-600">
+          {formData.companion === "family"
+            ? `${adults} böyük, ${children} uşaq`
+            : formData.companion === "friends"
+              ? `${peopleCount} nəfər`
+              : formData.companion === "couple"
+                ? "2 nəfər"
+                : "1 nəfər"}{" "}
+          səyahət edəcəksiniz
+        </p>
+      )}
+    </StepShell>
   );
 }
 

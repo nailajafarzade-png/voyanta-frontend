@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   favorites: [],
+  isLoading: false,
 };
 
 const wishlistSlice = createSlice({
@@ -38,6 +39,19 @@ const wishlistSlice = createSlice({
         state.favorites.push(action.payload);
       }
     },
+
+    // Backend-dən gələn siyahı ilə tam əvəz edir
+    setFavorites: (state, action) => {
+      state.favorites = action.payload;
+    },
+
+    clearFavorites: (state) => {
+      state.favorites = [];
+    },
+
+    setWishlistLoading: (state, action) => {
+      state.isLoading = action.payload;
+    },
   },
 });
 
@@ -45,6 +59,9 @@ export const {
   addToWishlist,
   removeFromWishlist,
   toggleWishlist,
+  setFavorites,
+  clearFavorites,
+  setWishlistLoading,
 } = wishlistSlice.actions;
 
 export default wishlistSlice.reducer;

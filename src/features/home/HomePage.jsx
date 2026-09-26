@@ -1,18 +1,19 @@
-import React from 'react'
-import HeroSection from './components/HeroSection'
-import HowItWorks from './components/HowItWorks'
-import PersonalizedPlaces from './components/PersonalizedPlaces'
-import SeasonalPlaces from './components/SeasonalPlaces'
+import HeroSection from "./components/HeroSection";
+import HowItWorks from "./components/HowItWorks";
+import PersonalizedPlaces from "./components/PersonalizedPlaces";
+import TrendingPlaces from "./components/TrendingPlaces";
+import SeasonalPlaces from "./components/SeasonalPlaces";
 
 function HomePage() {
   return (
-    <main className='pt-32 pb-16 md:pt-40 md:pb-24'>
-    <HeroSection/>
-    <HowItWorks/>
-    <PersonalizedPlaces/>
-    <SeasonalPlaces/>
+    <main className="pb-20 md:pb-28">
+      <HeroSection />
+      <HowItWorks />
+      <TrendingPlaces />
+      <PersonalizedPlaces />
+      <SeasonalPlaces />
     </main>
-  )
+  );
 }
 
-export default HomePage
+export default HomePage;
