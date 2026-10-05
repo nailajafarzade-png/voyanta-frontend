@@ -1,10 +1,13 @@
 import OptionGrid from "./OptionGrid";
 import StepShell from "./StepShell";
+import nature from "../../../assets/nature.png";
+import sea from "../../../assets/sea.png";
+import culture from "../../../assets/culture.png";
 
 const INTERESTS = [
-  { id: "nature", title: "Təbiət", emoji: "🖼️" },
-  { id: "sea", title: "Dəniz", emoji: "🌊" },
-  { id: "culture", title: "Tarix və mədəniyyət", emoji: "🏛️" },
+  { id: "nature", title: "Təbiət", icon: nature },
+  { id: "sea", title: "Dəniz", icon: sea },
+  { id: "culture", title: "Tarix və mədəniyyət", icon: culture },
 ];
 
 function StepOneInterests({ formData, setFormData }) {

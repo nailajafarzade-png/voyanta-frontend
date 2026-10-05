@@ -1,15 +1,17 @@
+import PropTypes from "prop-types";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
 import { useAuthModal } from "../../../context/authModalContext";
 import { usePlanner } from "../../../context/plannerContext";
-import { useDestinations } from "../../../hooks/useDestinations";
 import { getDestinationDetails } from "../../../utils/destinationDetails";
+import { getPlanImage } from "../../../utils/imageAssignment";
 import { getSeason, seasonStatus } from "../../../utils/season";
 import DestinationImage from "../../../components/common/DestinationImage";
 import SectionHeading from "../../../components/common/SectionHeading";
 import Reveal from "../../../components/common/Reveal";
 import { CardSkeleton, ErrorState } from "../../../components/common/States";
+import { imagePlanShape, sectionStateShape } from "./PopularPlaces";
 
 /**
  * Mövsümə uyğun istiqamətlər (PO tələbi #1).
@@ -25,16 +27,14 @@ import { CardSkeleton, ErrorState } from "../../../components/common/States";
  * arxa üzdə həmin istiqamətlə bağlı ətraflı məlumat (təsvir, qalma müddəti,
  * büdcə, ən yaxşı aylar) görünür.
  */
-function SeasonalPlaces() {
+function SeasonalPlaces({ state, imagePlan }) {
     const navigate = useNavigate();
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated } = useAuth();
     const { openLogin } = useAuthModal();
     const { openPlanner } = usePlanner();
 
-    const { places, isLoading, error, reload } = useDestinations({
-        isAuthenticated,
-        isAuthLoading: authLoading,
-    });
+    // Məlumat artıq HomePage tərəfindən `source: "featured"` ilə gəlir
+    const { places, isLoading, error, reload } = state;
 
     const season = useMemo(() => getSeason(), []);
 
@@ -102,10 +102,13 @@ function SeasonalPlaces() {
                                             {/* ÖN ÜZ */}
                                             <div className="absolute inset-0 overflow-hidden rounded-3xl bg-ink-900 shadow-soft ring-1 ring-slate-200/70 transition-shadow duration-500 group-hover:shadow-lift [backface-visibility:hidden]">
                                                 <DestinationImage
+                                                    image={getPlanImage(imagePlan, "seasonal", place)}
+                                                    candidates={place.images}
                                                     src={place.imageUrl}
                                                     alt={place.title}
                                                     className="h-full w-full"
                                                     season
+                                                    zoomable
                                                 />
 
                                                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/25 to-transparent" />
@@ -223,5 +226,10 @@ function SeasonalPlaces() {
         </section>
     );
 }
+
+SeasonalPlaces.propTypes = {
+    state: sectionStateShape.isRequired,
+    imagePlan: imagePlanShape,
+};
 
 export default SeasonalPlaces;

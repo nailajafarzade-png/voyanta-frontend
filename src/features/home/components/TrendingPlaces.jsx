@@ -1,43 +1,40 @@
-import { useMemo } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/authContext";
 import { useAuthModal } from "../../../context/authModalContext";
 import { usePlanner } from "../../../context/plannerContext";
-import { useDestinations } from "../../../hooks/useDestinations";
 import { getDestinationDetails } from "../../../utils/destinationDetails";
-import { likeRatio, sortByTrending } from "../../../utils/trending";
+import { getPlanImage } from "../../../utils/imageAssignment";
 import DestinationImage from "../../../components/common/DestinationImage";
 import Reveal from "../../../components/common/Reveal";
-import { CardSkeleton, ErrorState } from "../../../components/common/States";
+import { CardSkeleton, EmptyState, ErrorState } from "../../../components/common/States";
+import { imagePlanShape, sectionStateShape } from "./PopularPlaces";
 
 /**
  * "İnsanlar bunu bəyənir" / Trend bölməsi (PO tələbi #2).
  *
- * Mövcud `GET /destinations/featured` məlumatından istifadə edir; yeni
- * endpoint yoxdur. Reytinq UUID-dən hesablanan sabit hash ilə verilir
- * (`utils/trending.js`) — hər yükləmədə eyni sıra qalır, təsadüfi
- * "sürüşmə" olmur. Ölçülər (bəyənmə %/likes) eyni hash-dən gəlir.
+ * Hansı istiqamətin trend olduğuna frontend qərar vermir: `useDestinations`
+ * backend-in cavabını — sırası ilə — olduğu kimi ötürür, hər kart isə
+ * `place.imageUrl`-dən qidalanır. Şəkil seçimi də tamamilə backend-dədir.
  *
  * #1 istiqamət böyük "podium" kartı, qalanları yan xəttdəki siyahıdır.
+ *
+ * Backend boş siyahı qaytarsa bölmə sökülmür — mövcud stillə uyğun
+ * boş vəziyyət göstərilir.
  *
  * Responsivlik qeydi: podium kartı və siyahı eyni `lg:grid-cols-12`
  * grid-inin İKİ QARDAŞ elementi olmalıdır ki, `lg:col-span-*` işləsin —
  * əvvəlki versiyada bunlar səhvən fərqli konteynerlərdə idi və nəticədə
  * masaüstündə də bir sütuna yığılırdı.
  */
-function TrendingPlaces() {
+function TrendingPlaces({ state, imagePlan }) {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { openLogin } = useAuthModal();
   const { openPlanner } = usePlanner();
 
-  const { places, isLoading, error, reload } = useDestinations({
-    isAuthenticated,
-    isAuthLoading: authLoading,
-  });
-
-  // sabit reytinq
-  const ranked = useMemo(() => sortByTrending(places), [places]);
+  // Məlumat artıq HomePage tərəfindən `source: "trending"` ilə gəlir
+  const { places, isLoading, error, reload } = state;
 
   if (isLoading) {
     return (
@@ -59,9 +56,33 @@ function TrendingPlaces() {
     );
   }
 
-  if (ranked.length === 0) return null;
+  if (places.length === 0) {
+    return (
+        <section className="bg-canvas py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <EmptyState
+              icon="🔥"
+              title="Hələ trend yoxdur"
+              description="Bu həftə ən çox baxılan və planlanan istiqamətlər burada görünəcək."
+              action={
+                <button
+                  type="button"
+                  onClick={reload}
+                  className="rounded-full bg-ink-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-ink-800 active:scale-95"
+                >
+                  Yenidən yüklə
+                </button>
+              }
+            />
+          </div>
+        </section>
+    );
+  }
 
-  const [top, ...rest] = ranked;
+  // Sıra backend-dən gəlir — frontend yeni reytinq qurmur.
+  // Qalan istiqamətlərin SAYINI kısmırıq: backend nə qədər göndərirsə,
+  // hamısı göstərilir (`slice(0, 4)` əvvəl 6-cı istiqaməti silirdi).
+  const [top, ...rest] = places;
 
   return (
       <section
@@ -134,9 +155,12 @@ function TrendingPlaces() {
                   className="group relative block h-full min-h-[320px] w-full overflow-hidden rounded-[28px] text-left shadow-lift ring-1 ring-white/10 transition-transform duration-500 hover:scale-[1.015] sm:min-h-[380px] sm:rounded-[32px] lg:min-h-[420px]"
               >
                 <DestinationImage
+                    image={getPlanImage(imagePlan, "trending", top)}
+                    candidates={top.images}
                     src={top.imageUrl}
                     alt={top.title}
                     className="absolute inset-0 h-full w-full"
+                    zoomable
                 />
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/40 to-transparent" />
@@ -165,14 +189,14 @@ function TrendingPlaces() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-4">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
-                    <span aria-hidden="true">🔥</span>
-                    {Math.round(82 + likeRatio(top.id) * 17)}% bəyəndi
-                  </span>
+                      <span aria-hidden="true">🔥</span>
+                      Bu həftənin trendi
+                    </span>
 
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm">
-                    <span aria-hidden="true">⭐</span>
-                      {(4.2 + likeRatio(top.id)).toFixed(1)}
-                  </span>
+                      <span aria-hidden="true">⭐</span>
+                      Ən çox baxılan
+                    </span>
                   </div>
                 </div>
               </button>
@@ -180,10 +204,8 @@ function TrendingPlaces() {
 
             {/* ============ QALANLAR: SİYAHI ============ */}
             <div className="flex flex-col gap-3.5 sm:gap-4 lg:col-span-7">
-              {rest.slice(0, 4).map((place, index) => {
+              {rest.map((place, index) => {
                 const details = getDestinationDetails(place);
-                const ratio = likeRatio(place.id);
-                const score = Math.round(82 + ratio * 17);
 
                 return (
                     <Reveal key={place.id} delay={index * 90} variant="right">
@@ -198,9 +220,12 @@ function TrendingPlaces() {
 
                         <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-ink-800 sm:h-20 sm:w-20 sm:rounded-2xl">
                       <DestinationImage
+                          image={getPlanImage(imagePlan, "trending", place)}
+                          candidates={place.images}
                           src={place.imageUrl}
                           alt={place.title}
                           className="absolute inset-0 h-full w-full transition-transform duration-700 ease-out group-hover:scale-110"
+                          zoomable
                       />
                     </span>
 
@@ -218,15 +243,9 @@ function TrendingPlaces() {
                         {details.headline}
                       </span>
 
-                      <span className="mt-2 flex items-center gap-2 sm:mt-2.5">
-                        <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-                          <span
-                              className="block h-full rounded-full bg-gradient-to-r from-brand-400 to-mint-400 transition-all duration-700"
-                              style={{ width: `${score}%` }}
-                          />
-                        </span>
-                        <span className="shrink-0 text-[10px] font-bold text-white/60">
-                          {score}%
+                      <span className="mt-2 sm:mt-2.5">
+                        <span className="inline-block rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
+                          #{index + 2} trend
                         </span>
                       </span>
                     </span>
@@ -247,5 +266,10 @@ function TrendingPlaces() {
       </section>
   );
 }
+
+TrendingPlaces.propTypes = {
+  state: sectionStateShape.isRequired,
+  imagePlan: imagePlanShape,
+};
 
 export default TrendingPlaces;

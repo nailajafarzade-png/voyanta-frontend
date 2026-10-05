@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DestinationImage from "./DestinationImage";
@@ -14,7 +15,15 @@ import { monthRange, seasonStatus } from "../../utils/season";
  * "çevir" düyməsi ilə idarə olunur. CSS `.voy-flip` sinfindəki
  * `data-flipped` atributu ilə işləyir.
  */
-function PostcardCard({ place, rank, onOpenDetails, onPlan, badge }) {
+function PostcardCard({
+  place,
+  rank,
+  image,
+  zoomable = false,
+  onOpenDetails,
+  onPlan,
+  badge,
+}) {
   const navigate = useNavigate();
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -35,10 +44,13 @@ function PostcardCard({ place, rank, onOpenDetails, onPlan, badge }) {
         {/* ================= ÖN ÜZ ================= */}
         <div className="voy-face voy-face-front rounded-[28px] bg-ink-900">
           <DestinationImage
+            image={image}
+            candidates={place.images}
             src={place.imageUrl}
             alt={place.title}
             className="absolute inset-0 h-full w-full"
             eager={rank === 0}
+            zoomable={zoomable}
           />
 
           {/* qrafik qat */}
@@ -171,6 +183,22 @@ function PostcardCard({ place, rank, onOpenDetails, onPlan, badge }) {
     </div>
   );
 }
+
+PostcardCard.propTypes = {
+  place: PropTypes.shape({
+    id: PropTypes.string,
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
+    imageUrl: PropTypes.string,
+    images: PropTypes.arrayOf(PropTypes.shape({ url: PropTypes.string })),
+  }).isRequired,
+  rank: PropTypes.number,
+  image: PropTypes.shape({ url: PropTypes.string, fullUrl: PropTypes.string }),
+  zoomable: PropTypes.bool,
+  onOpenDetails: PropTypes.func,
+  onPlan: PropTypes.func,
+  badge: PropTypes.node,
+};
 
 export default PostcardCard;
 

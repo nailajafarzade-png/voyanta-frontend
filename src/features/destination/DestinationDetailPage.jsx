@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { FaRegHeart, FaHeart, FaArrowLeft, FaMapMarkerAlt } from "react-icons/fa";
@@ -6,6 +6,7 @@ import { FaRegHeart, FaHeart, FaArrowLeft, FaMapMarkerAlt } from "react-icons/fa
 import { getFeaturedDestinations } from "../../api/destinations";
 import { toggleFavorite } from "../../redux/wishlistThunks";
 import { toPlace } from "../../utils/destinations";
+import { createImagePlan, getPlanImage } from "../../utils/imageAssignment";
 import { getDestinationDetails } from "../../utils/destinationDetails";
 import { getSeason, monthRange, seasonStatus } from "../../utils/season";
 import { useAuth } from "../../context/authContext";
@@ -38,6 +39,17 @@ function DestinationDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Səhifə daxilində də təkrar qaçınmaq üçün plan: hero ən yaxşı şəkli alır,
+  // "Digər istiqamətlər" isə eyni istiqamət olsa fərqli namizəd göstərir.
+  const imagePlan = useMemo(
+    () =>
+      createImagePlan([
+        { key: "detail-hero", places: place ? [place] : [] },
+        { key: "detail-others", places: others },
+      ]),
+    [place, others]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -166,11 +178,14 @@ function DestinationDetailContent({
       {/* ================= HERO ================= */}
       <section className="relative h-[52vh] min-h-[380px] w-full overflow-hidden sm:h-[58vh]">
         <DestinationImage
+          image={getPlanImage(imagePlan, "detail-hero", place)}
+          candidates={place.images}
           src={place.imageUrl}
           alt={place.title}
           className="absolute inset-0 h-full w-full"
           season
           eager
+          zoomable
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/45 to-ink-900/10" />
 
@@ -416,7 +431,12 @@ function DestinationDetailContent({
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {others.slice(0, 3).map((item, index) => (
                 <Reveal key={item.id} delay={index * 90}>
-                  <PostcardCard place={item} onPlan={onPlan} />
+                  <PostcardCard
+                    place={item}
+                    image={getPlanImage(imagePlan, "detail-others", item)}
+                    zoomable
+                    onPlan={onPlan}
+                  />
                 </Reveal>
               ))}
             </div>

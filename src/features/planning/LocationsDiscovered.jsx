@@ -12,11 +12,14 @@ import { usePlanner } from "../../context/plannerContext";
 import { CardSkeleton, EmptyState, ErrorState } from "../../components/common/States";
 
 /**
- * "/location" — istiqamət kataloqu.
+ * "/location" — "Sənin üçün seçilmiş yerlər" (istiqamət kataloqu).
  *
- * Əvvəl ayrıca sorğu göndərirdi; indi `useDestinations` paylaşılan yaddaşını
- * istifadə edir (eyni endpoint-lər, azad şəbəkə sorğusu).
- * Hər kart istiqamət səhifəsinə (PO #3) aparır.
+ * Bu səhifə də backend-in `GET /api/recommendations/personalized` məlumatını
+ * göstərir, ona görə gonaq üçün qorunur: `requireAuth: true` — gonaq heç bir
+ * sorğu göndərmir və qeydiyyat promptunu görür (401/403 halında eyni vəziyyət).
+ *
+ * Hər kart istiqamət səhifəsinə (PO #3) aparır, şəkli isə backend-in
+ * `imageUrl`-indən gəlir.
  */
 function LocationsDiscovered() {
   const dispatch = useDispatch();
@@ -27,9 +30,10 @@ function LocationsDiscovered() {
 
   const favorites = useSelector((state) => state.wishlist.favorites);
 
-  const { places, isLoading, error, reload } = useDestinations({
+  const { places, isLoading, error, authRequired, reload } = useDestinations({
     isAuthenticated,
     isAuthLoading: authLoading,
+    requireAuth: true,
   });
 
   const handleToggleFavorite = (e, place) => {
@@ -74,9 +78,43 @@ function LocationsDiscovered() {
 
         {isLoading && <CardSkeleton count={8} />}
 
-        {!isLoading && error && <ErrorState message={error} onRetry={reload} />}
+        {/* gonaq / sessiya bitib → qeydiyyat promptu */}
+        {authRequired && (
+          <div className="overflow-hidden rounded-4xl border border-brand-100 bg-gradient-to-br from-white via-brand-50/60 to-mint-50/70 px-6 py-14 text-center shadow-soft sm:px-12">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-soft ring-1 ring-slate-100">
+              <span aria-hidden="true">✨</span>
+            </div>
 
-        {!isLoading && !error && places.length === 0 && (
+            <h2 className="text-xl font-extrabold tracking-tight text-ink-900 sm:text-2xl">
+              Sənin üçün seçilmiş yerlər
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-500">
+              Bu siyahı yalnız hesabına daxil olmuş istifadəçilər üçündür.
+              Pulsuz qeydiyyatdan keç, sənə uyğun yerləri gör və favoritlərinə əlavə et.
+            </p>
+
+            <button
+              type="button"
+              onClick={openLogin}
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-ink-900 px-7 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:bg-ink-800 active:scale-95"
+            >
+              <span>Qeydiyyatdan keç</span>
+              <span
+                className="transition-transform duration-300 group-hover:translate-x-1"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !authRequired && error && (
+          <ErrorState message={error} onRetry={reload} />
+        )}
+
+        {!isLoading && !authRequired && !error && places.length === 0 && (
           <EmptyState
             icon="🧭"
             title="Hələ istiqamət yoxdur"
@@ -93,7 +131,7 @@ function LocationsDiscovered() {
           />
         )}
 
-        {!isLoading && !error && places.length > 0 && (
+        {!isLoading && !authRequired && !error && places.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {places.map((place) => {
               const isFavorite = favorites.some((item) => item.id === place.id);
@@ -115,9 +153,11 @@ function LocationsDiscovered() {
                 >
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-200">
                     <DestinationImage
+                      candidates={place.images}
                       src={place.imageUrl}
                       alt={place.title}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      zoomable
                     />
 
                     <div

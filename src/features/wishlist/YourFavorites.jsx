@@ -154,6 +154,7 @@ function YourFavorites() {
                 >
                   <div className="relative w-full aspect-[16/10] overflow-hidden bg-slate-200">
                     <DestinationImage
+                      candidates={place.images}
                       src={place.imageUrl}
                       alt={place.title}
                       className="
@@ -164,6 +165,7 @@ function YourFavorites() {
                         duration-500
                         group-hover:scale-105
                       "
+                      zoomable
                     />
 
                     <div
