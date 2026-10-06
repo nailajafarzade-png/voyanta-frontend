@@ -2,7 +2,7 @@
  * Səhifə üzrə şəkil TƏYİNİ — NƏZARƏTLİ ROTASİYA, hər render DƏYİŞMİR.
  *
  * PROBLEM: backend hər istiqamət üçün bir neçə relevant şəkil qaytarır, amma
- * eyni istiqamət Trending / Popular / "Sənə xüsusi" bölmələrində təkrarlanır.
+ * eyni istiqamət Popular / "Sənə xüsusi" bölmələrində təkrarlanır.
  *
  * HƏLL: `createImagePlan()` bütün bölmələri BİR YERDƏ baxıb hər karta
  * deterministik bir namizəd təyin edir. Prioritet qaydası:
@@ -116,7 +116,7 @@ export function createImagePlan(sections, seed = PAGE_LOAD_SEED) {
 
       // 2) Namizədlərin hamısı işlədilibsə → həmin istiqamətin növbəti
       //    (hələ istifadə olunmamış) namizədi. Beləcə eyni istiqamət
-      //    Trending → Popular → Sənə xüsusi kimi sıra ilə fərqli şəkil göstərir.
+      //    Popular → Sənə xüsusi kimi sıra ilə fərqli şəkil göstərir.
       if (index === -1) {
         index = candidates.findIndex((_, i) => !takenForPlace.has(i));
       }

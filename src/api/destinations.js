@@ -1,4 +1,5 @@
 import api, { unwrap } from "./axios";
+
 /** GET /api/destinations/featured — auth tələb olunmur, opsional `limit`. */
 export async function getFeaturedDestinations(limit) {
     const response = await api.get("/destinations/featured", {
@@ -7,19 +8,29 @@ export async function getFeaturedDestinations(limit) {
     return unwrap(response) ?? [];
 }
 
+/** GET /api/destinations/{id} — auth tələb olunmur. */
+export async function getDestinationById(id) {
+    const response = await api.get(`/destinations/${id}`);
+    return unwrap(response);
+}
+
+/** GET /api/destinations/batch?ids=... — auth tələb olunmur. */
+export async function getDestinationsByIds(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+    const response = await api.get("/destinations/batch", {
+        params: { ids },
+    });
+    return unwrap(response) ?? [];
+}
+
 /**
- * GET /api/destinations/trending — açıq endpoint.
- *
- * Reytinq tamamilə BACKEND-də hesablanır (son 30 gündə favoriləşdirilənlər).
- * Frontend heç bir populyarlıq/trend ölçüsü hesablamır, sıranı olduğu kimi
- * qəbul edir. `exclude` = eyni səhifədə artıq göstərilən istiqamət ID-ləri;
- * backend heç nə qalmasayara siyahını tamamlayır (relevans qurban gedmir).
+ * GET /api/destinations?season=<season>&limit=4 — auth tələb olunmur.
  */
-export async function getTrendingDestinations(limit, exclude) {
-    const response = await api.get("/destinations/trending", {
+export async function getDestinationsBySeason(season, limit) {
+    const response = await api.get("/destinations", {
         params: {
+            ...(season ? { season } : {}),
             ...(limit ? { limit } : {}),
-            ...(exclude?.length ? { exclude } : {}),
         },
     });
     return unwrap(response) ?? [];

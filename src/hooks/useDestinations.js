@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getFeaturedDestinations,
   getPopularDestinations,
-  getTrendingDestinations,
 } from "../api/destinations";
 import { getPersonalizedDestinations } from "../api/recommendations";
 import { apiErrorMessage, toApiError } from "../api/errors";
@@ -10,7 +9,7 @@ import { toPlace } from "../utils/destinations";
 import { createImagePlan } from "../utils/imageAssignment";
 
 /**
- * Ana səhifədə 3 bölmə (tövsiyələr / trend / mövsümi) eyni siyahını göstərir.
+ * Ana səhifədə bölmələr eyni siyahını göstərir.
  * Əvvəllər hər biri ayrı-ayrı sorğu göndərirdi — indi modul səviyyəsində
  * BİR sorğu göndərilir və nəticə bütün səhifə üçün paylaşılır.
  *
@@ -31,7 +30,6 @@ const MAX_AGE_MS = 5 * 60 * 1000; // 5 dəqiqə
 
 const LOADERS = {
   featured: (limit) => getFeaturedDestinations(limit),
-  trending: (limit, exclude) => getTrendingDestinations(limit, exclude),
   popular: (limit, exclude) => getPopularDestinations(limit, exclude),
   personalized: (limit) => getPersonalizedDestinations(limit),
 };
@@ -78,7 +76,7 @@ function load(key, limit, exclude) {
 
 /**
  * @param {{ isAuthenticated: boolean, isAuthLoading?: boolean, limit?: number,
- *           requireAuth?: boolean, source?: 'featured'|'trending'|'popular'|'personalized',
+ *           requireAuth?: boolean, source?: 'featured'|'popular'|'personalized',
  *           exclude?: string[] }} params
  */
 export function useDestinations({

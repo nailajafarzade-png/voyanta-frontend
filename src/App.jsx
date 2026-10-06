@@ -12,36 +12,32 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import WishlistSync from "./components/common/WishlistSync";
 
 function App() {
-  return (
-    <>
-      {/* Daxil olanda wishlist-i backend-dən yükləyir, çıxanda təmizləyir */}
-      {/* deyişiklik */}
-      <WishlistSync />
+    return (
+        <>
+            {/* Daxil olanda wishlist-i backend-dən yükləyir, çıxanda təmizləyir */}
+            <WishlistSync />
 
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/travel/:planId" element={<TravelItineraryPage />} />
-          <Route path="/location" element={<LocationsDiscovered />} />
-          <Route path="/destination/:destinationId" element={<DestinationDetailPage />} />
+            <Routes>
+                <Route element={<MainLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/travel/:planId" element={<TravelItineraryPage />} />
+                    <Route path="/location" element={<LocationsDiscovered />} />
+                    <Route path="/destination/:destinationId" element={<DestinationDetailPage />} />
 
-          {/* Yalnız daxil olmuş istifadəçi üçün */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/profil" element={<ProfilePage />} />
-            <Route path="/favorites" element={<YourFavorites />} />
-          </Route>
-        </Route>
+                    {/* Yalnız daxil olmuş istifadəçi üçün */}
+                    <Route element={<ProtectedRoute />}>
+                        <Route path="/profil" element={<ProfilePage />} />
+                        <Route path="/favorites" element={<YourFavorites />} />
+                    </Route>
+                </Route>
 
-        {/* Plan hazırlanarkən gözləmə ekranı (Header/Footer olmadan) */}
-        <Route path="/loading/:planId" element={<PlanLoading />} />
+                {/* Plan hazırlanarkən gözləmə ekranı (Header/Footer olmadan) */}
+                <Route path="/loading/:planId" element={<PlanLoading />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
-  );
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </>
+    );
 }
 
 export default App;
-
-
-//Changes2

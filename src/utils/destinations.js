@@ -23,7 +23,7 @@ import { normaliseImageUrl, toImageCandidates } from "./imageCandidates";
  * @returns {{ id: string, title: string, subtitle: string, imageUrl: string|null }}
  */
 export function toPlace(destination) {
-  // Backend-in `images[]` namizədləri KORUNUR — eyni istiqamət Trending /
+  // Backend-in `images[]` namizədləri KORUNUR — eyni istiqamət
   // Popular / "Sənə xüsusi" bölmələrində FƏRQli şəkil göstərə bilir
   // (bax: utils/imageAssignment.js). Sıra backend-dən gəlir, POZULMUR.
   const images = toImageCandidates(destination);

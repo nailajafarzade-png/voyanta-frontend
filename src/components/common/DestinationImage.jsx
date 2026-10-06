@@ -1,3 +1,4 @@
+
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import { FaExpand } from "react-icons/fa";
@@ -22,7 +23,7 @@ import ImageLightbox from "./ImageLightbox";
  *                    yüklənməsə növbəti RELEVANT namizəd sınanır.
  *   • `zoomable`   → şəklin üzərində tam ekran baxış düyməsi görünür.
  *
- * Fallback zənciri: `image.url` → qalan namizədlər → `src` → universal səyahət
+ * Fallback zənciri: `image.url` → `src` → qalan namizədlər → universal səyahət
  * gradient-i. Heç vaxt saxta URL yaratmır, heç vaxt qırıq şəkil ikonu göstərmir
  * və bir istiqamətin şəkli olmasa belə kart düzəni dağılmır.
  *
@@ -32,7 +33,8 @@ import ImageLightbox from "./ImageLightbox";
 
 /**
  * Sınanacaq URL-lərin sırasını qurur.
- * Əvvəlcə seçilmiş namizəd, sonra qalan namizədlər, ən sonda köhnə `src`.
+ * Əvvəlcə seçilmiş namizəd, sonra köhnə `src` (planın saxlanmış üz qabığı),
+ * qalan namizədlər — beləcə `src` namizədlər tərəfindən üstələnmir.
  * @returns {string[]}
  */
 function buildSources(image, candidates, src) {
@@ -43,10 +45,10 @@ function buildSources(image, candidates, src) {
   };
 
   add(image?.url);
+  add(src);
   for (const candidate of candidates ?? []) {
     if (candidate !== image) add(candidate?.url);
   }
-  add(src);
 
   return list;
 }

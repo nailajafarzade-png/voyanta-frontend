@@ -7,6 +7,7 @@ import { apiErrorMessage } from "../../api/errors";
 import { useAuth } from "../../context/authContext";
 import { useAuthModal } from "../../context/authModalContext";
 import DestinationImage from "../../components/common/DestinationImage";
+import FavoriteButton from "../../components/common/FavoriteButton";
 import { COMPANION_LABELS } from "./labels";
 import { claimAnonymousPlan } from "./claimAnonymousPlan";
 import { getPendingPlanId } from "./storage";
@@ -29,12 +30,9 @@ function TravelItineraryPage() {
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const cancelled = useRef(false);
   const claimTried = useRef(false);
-
-  const handleWishlist = () => setIsWishlisted((prev) => !prev);
 
   const loadPlan = useCallback(async (id) => {
     const loaded = await getPlan(id);
@@ -156,23 +154,19 @@ const currentImage = normaliseImageUrl(plan.imageUrl);
                 />
             )}
 
-            {/* Wishlist button */}
-            <button
-                type="button"
-                aria-label={isWishlisted ? "Wishlistdən çıxar" : "Wishlistə əlavə et"}
-                onClick={handleWishlist}
-                className="absolute top-3.5 right-3.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md transition-all duration-200 hover:bg-white/35 active:scale-90"
-            >
-              {isWishlisted ? (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-red-500 stroke-red-500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-              ) : (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-              )}
-            </button>
+            {/* Wishlist button — həmişə görünür; istiqamət tapılmazsa sıradan çıxmış olur */}
+            <FavoriteButton
+                place={{
+                    id: plan.destinationId,
+                    title: plan.destination,
+                    subtitle: "",
+                    imageUrl: plan.imageUrl,
+                    images: plan.images,
+                }}
+                size="md"
+                variant="glass"
+                className="absolute top-3.5 right-3.5"
+            />
 
             <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/40 to-transparent p-6 sm:p-8">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">

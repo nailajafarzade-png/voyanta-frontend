@@ -1,57 +1,63 @@
+import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/authContext";
-import { useAuthModal } from "../../../context/authModalContext";
-import { usePlanner } from "../../../context/plannerContext";
-import { getDestinationDetails } from "../../../utils/destinationDetails";
+import { getDestinationsBySeason } from "../../../api/destinations";
 import { getPlanImage } from "../../../utils/imageAssignment";
-import { getSeason, seasonStatus } from "../../../utils/season";
-import DestinationImage from "../../../components/common/DestinationImage";
+import { getSeason } from "../../../utils/season";
 import SectionHeading from "../../../components/common/SectionHeading";
 import Reveal from "../../../components/common/Reveal";
-import { CardSkeleton, ErrorState } from "../../../components/common/States";
-import { imagePlanShape, sectionStateShape } from "./PopularPlaces";
+import DestinationCard from "../../../components/common/DestinationCard";
+import { CardSkeleton, EmptyState, ErrorState } from "../../../components/common/States";
+
+const SEASONS = [
+    { key: "winter", label: "Qış" },
+    { key: "spring", label: "Yaz" },
+    { key: "summer", label: "Yay" },
+    { key: "autumn", label: "Payız" },
+];
 
 /**
- * Mövsümə uyğun istiqamətlər (PO tələbi #1).
+ * Mövsümə uyğun seçimlər — sekmeli bölmə.
  *
- * Əvvəl bu bölmə ayrıca `GET /destinations/featured` sorğusu göndərirdi.
- * İndi `useDestinations` ilə paylaşılan yaddaşdan oxunur — eyni endpoint,
- * amma bütün ana səhifə üçün yalnız bir şəbəkə sorğusu.
- *
- * Şəkillər mövsüm rəng tənzimləyicisi (`.voy-grade-*`) ilə mövsümə uyğun
- * görünür və hər istiqamət üçün "indi ən yaxşı vaxtdır" işarəsi göstərilir.
- *
- * Kartların üzərinə mouse gətirildikdə kart 3D formada fırlanır (flip) və
- * arxa üzdə həmin istiqamətlə bağlı ətraflı məlumat (təsvir, qalma müddəti,
- * büdcə, ən yaxşı aylar) görünür.
+ * Məlumat mənbəyi: `GET /api/destinations?season=<season>&limit=4`.
+ * Hər mövsüm üçün 4 kart, bir sətir.
  */
-function SeasonalPlaces({ state, imagePlan }) {
-    const navigate = useNavigate();
-    const { isAuthenticated } = useAuth();
-    const { openLogin } = useAuthModal();
-    const { openPlanner } = usePlanner();
+function SeasonalPlaces({ imagePlan }) {
+    const currentSeason = useMemo(() => getSeason(), []);
+    const [activeSeason, setActiveSeason] = useState(currentSeason.key);
+    const [places, setPlaces] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Məlumat artıq HomePage tərəfindən `source: "featured"` ilə gəlir
-    const { places, isLoading, error, reload } = state;
+    useEffect(() => {
+        let cancelled = false;
 
-    const season = useMemo(() => getSeason(), []);
+        setIsLoading(true);
+        setError(null);
 
-    // Əvvəlcə "indi ən yaxşı vaxt" olanlar, sonra qalanlar
-    const sorted = useMemo(() => {
-        const rank = { peak: 0, good: 1, off: 2, unknown: 3 };
-        return [...places].sort(
-            (a, b) =>
-                rank[seasonStatus(getDestinationDetails(a).bestMonths).state] -
-                rank[seasonStatus(getDestinationDetails(b).bestMonths).state]
-        );
-    }, [places]);
+        getDestinationsBySeason(activeSeason, 4)
+            .then((destinations) => {
+                if (!cancelled) {
+                    setPlaces(destinations.filter(Boolean));
+                    setIsLoading(false);
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    setError(err.message || "Mövsüm istiqamətləri yüklənmədi");
+                    setIsLoading(false);
+                }
+            });
 
-    const inSeason = sorted.filter(
-        (place) =>
-            seasonStatus(getDestinationDetails(place).bestMonths).state === "peak"
-    );
+        return () => {
+            cancelled = true;
+        };
+    }, [activeSeason]);
+
+    const reload = () => {
+        setPlaces([]);
+        setIsLoading(true);
+        setError(null);
+    };
 
     return (
         <section className="relative overflow-hidden bg-canvas py-20 lg:py-24">
@@ -63,173 +69,81 @@ function SeasonalPlaces({ state, imagePlan }) {
             <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <SectionHeading
                     eyebrow={{
-                        text: `Günün mövsümü — ${season.label}`,
+                        text: `Mövsüm — ${currentSeason.label}`,
                         tone: "mint",
-                        icon: season.icon,
+                        icon: currentSeason.icon,
                     }}
                     title="Mövsümə uyğun seçimlər"
-                    description={
-                        inSeason.length > 0
-                            ? `${season.label} mövsümü üçün ən uyğun istiqamətlər. Şəkillər və tövsiyələr cari dövrə uyğunlaşdırılır.`
-                            : "Bu mövsüm üçün uyğun istiqamətlər aşağıdadır — şəkillər mövsümün göz rənginə uyğunlaşdırılıb."
-                    }
+                    description="Hər mövsümün ən uyğun istiqamətlərini kəşf et."
                 />
 
-                {/* yüklənir */}
-                {isLoading && <CardSkeleton count={4} className="mt-10" />}
-
-                {/* xəta */}
-                {!isLoading && error && (
-                    <ErrorState className="mt-10" message={error} onRetry={reload} />
-                )}
-
-                {/* kartlar */}
-                {!isLoading && !error && sorted.length > 0 && (
-                    <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        {sorted.map((place, index) => {
-                            const details = getDestinationDetails(place);
-                            const status = seasonStatus(details.bestMonths);
-
-                            return (
-                                <Reveal key={place.id} delay={index * 90} variant="zoom">
-                                    {/* Flip konteyner: 3D perspektiv burada təyin olunur */}
-                                    <div className="group relative aspect-[4/5] w-full [perspective:1600px]">
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(`/destination/${place.id}`)}
-                                            className="relative h-full w-full rounded-3xl text-left outline-none [transform-style:preserve-3d] transition-transform duration-700 ease-out focus-visible:ring-2 focus-visible:ring-mint-500 group-hover:[transform:rotateY(180deg)]"
-                                        >
-                                            {/* ÖN ÜZ */}
-                                            <div className="absolute inset-0 overflow-hidden rounded-3xl bg-ink-900 shadow-soft ring-1 ring-slate-200/70 transition-shadow duration-500 group-hover:shadow-lift [backface-visibility:hidden]">
-                                                <DestinationImage
-                                                    image={getPlanImage(imagePlan, "seasonal", place)}
-                                                    candidates={place.images}
-                                                    src={place.imageUrl}
-                                                    alt={place.title}
-                                                    className="h-full w-full"
-                                                    season
-                                                    zoomable
-                                                />
-
-                                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/25 to-transparent" />
-
-                                                {/* mövsüm statusu */}
-                                                <span
-                                                    className={`absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-bold backdrop-blur-md ${
-                                                        status.state === "peak"
-                                                            ? "bg-mint-500/90 text-white"
-                                                            : status.state === "good"
-                                                                ? "bg-white/85 text-mint-700"
-                                                                : "bg-white/70 text-ink-600"
-                                                    }`}
-                                                >
-                          <span aria-hidden="true">
-                            {status.state === "peak" ? "✨" : "🕒"}
-                          </span>
-                                                    {status.label}
-                        </span>
-
-                                                <div className="absolute inset-x-0 bottom-0 p-5">
-                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                                                        {place.subtitle}
-                                                    </p>
-
-                                                    <h3 className="mt-1.5 text-lg font-bold leading-tight text-white">
-                                                        {place.title}
-                                                    </h3>
-
-                                                    <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-white/80">
-                                                        <span>{details.stayLength}</span>
-                                                        <span className="h-1 w-1 rounded-full bg-white/40" />
-                                                        <span>{details.budget}</span>
-                                                        <span
-                                                            className="ml-auto transition-transform duration-500 group-hover:translate-x-1"
-                                                            aria-hidden="true"
-                                                        >
-                              →
-                            </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* ARXA ÜZ — ətraflı məlumat */}
-                                            <div className="absolute inset-0 flex flex-col overflow-hidden rounded-3xl bg-ink-900 p-5 shadow-soft ring-1 ring-slate-200/70 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                                <p className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                                                    {place.subtitle}
-                                                </p>
-
-                                                <h3 className="mt-1.5 text-lg font-bold leading-tight text-white">
-                                                    {place.title}
-                                                </h3>
-
-                                                <p className="mt-3 flex-1 overflow-y-auto text-xs leading-relaxed text-white/75">
-                                                    {details.headline}
-                                                </p>
-
-                                                <div className="mt-4 space-y-1.5 border-t border-white/10 pt-3 text-[11px] text-white/70">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-white/45">Qalma müddəti</span>
-                                                        <span className="font-semibold text-white">
-                              {details.stayLength}
-                            </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-white/45">Büdcə</span>
-                                                        <span className="font-semibold text-white">
-                              {details.budget}
-                            </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-white/45">Ən yaxşı aylar</span>
-                                                        <span className="font-semibold text-white">
-                              {details.bestMonths?.join?.(", ") ?? "—"}
-                            </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-mint-300">
-                                                    <span>Ətraflı bax</span>
-                                                    <span aria-hidden="true">→</span>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </Reveal>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* alt CTA */}
-                {!isLoading && !error && sorted.length > 0 && (
-                    <Reveal delay={300} className="mt-14 flex flex-col items-center gap-4">
-                        <p className="text-center text-sm text-ink-500">
-                            Mövsüm fərq etmir — Voyanta sənin üçün ən uyğun planı tapır.
-                        </p>
-
-                        <button
-                            type="button"
-                            onClick={isAuthenticated ? openPlanner : openLogin}
-                            className="group inline-flex items-center gap-2 rounded-full bg-ink-900 px-7 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:bg-ink-800 active:scale-95"
-                        >
-                            <span>Planlaşdırmaya başla</span>
-                            <span
-                                className="transition-transform duration-300 group-hover:translate-x-1"
-                                aria-hidden="true"
+                {/* Tabs */}
+                <div className="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Mövsüm sekmələri">
+                    {SEASONS.map((s) => {
+                        const isActive = activeSeason === s.key;
+                        return (
+                            <button
+                                key={s.key}
+                                type="button"
+                                role="tab"
+                                aria-selected={isActive}
+                                onClick={() => setActiveSeason(s.key)}
+                                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                                    isActive
+                                        ? "bg-ink-900 text-white shadow-soft"
+                                        : "bg-white text-ink-500 hover:bg-slate-100"
+                                }`}
                             >
-                →
-              </span>
-                        </button>
-                    </Reveal>
-                )}
+                                {s.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Content with min-height to prevent layout jump */}
+                <div className="mt-10 min-h-[480px]">
+                    {isLoading && (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="aspect-[3/4] rounded-[28px] bg-slate-200" />
+                            ))}
+                        </div>
+                    )}
+
+                    {!isLoading && error && (
+                        <ErrorState className="mt-10" message={error} onRetry={reload} />
+                    )}
+
+                    {!isLoading && !error && places.length === 0 && (
+                        <EmptyState
+                            className="mt-10"
+                            icon="🗓️"
+                            title="Bu mövsüm üçün istiqamət yoxdur"
+                            description="Başqa mövsümü seç və yeni imkanları kəşf et."
+                        />
+                    )}
+
+                    {!isLoading && !error && places.length > 0 && (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {places.map((place, index) => (
+                                <DestinationCard
+                                    key={place.id}
+                                    place={place}
+                                    imagePlan={imagePlan}
+                                    sectionKey="seasonal"
+                                    index={index}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     );
 }
 
 SeasonalPlaces.propTypes = {
-    state: sectionStateShape.isRequired,
-    imagePlan: imagePlanShape,
+    imagePlan: PropTypes.instanceOf(Map),
 };
 
 export default SeasonalPlaces;
