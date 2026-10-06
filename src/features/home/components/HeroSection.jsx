@@ -1,54 +1,50 @@
 import { useEffect, useMemo, useState } from "react";
-import PropTypes from "prop-types";
 import { getHomepageStats } from "../../../api/homepage";
 import { formatCount, formatRating } from "../../../utils/format";
-import { getPlanImage } from "../../../utils/imageAssignment";
 import { getSeason } from "../../../utils/season";
 import Reveal from "../../../components/common/Reveal";
-import DestinationImage from "../../../components/common/DestinationImage";
-import { imagePlanShape, sectionStateShape } from "./PopularPlaces";
+
+import img1 from "../../../assets/srilanka.jpg";
+import img2 from "../../../assets/russia.jpg";
+import img3 from "../../../assets/poland.jpg";
+import img4 from "../../../assets/australia.jpg";
+
+// Hero kolajındakı 4 sabit istiqamət (lokal şəkillər)
+const HERO_DESTINATIONS = [
+  {
+    id: "sri-lanka",
+    image: img1,
+    subtitle: "Təbiət və mədəniyyət",
+    title: "Şri-Lanka",
+  },
+  {
+    id: "russia",
+    image: img2,
+    subtitle: "Tarix və memarlıq",
+    title: "Rusiya",
+  },
+  {
+    id: "poland",
+    image: img3,
+    subtitle: "Köhnə şəhərlər",
+    title: "Polşa",
+  },
+  {
+    id: "australia",
+    image: img4,
+    subtitle: "Okean və təbiət",
+    title: "Avstraliya",
+  },
+];
 
 /**
- * Ana səhifənin hero bölməsi. Backend-dən gələn featured istiqamətləri
- * göstərir — şəkillər tamamilə backend → Unsplash axını ilə təmin olunur.
+ * Ana səhifənin hero bölməsi. Dizayn dili (mavi #5B8DEF, statistika bloku,
+ * 4 istiqamət kolajı) saxlanılır. Kolaj lokal şəkillərdən qurulur.
  */
-function HeroSection({ state, imagePlan }) {
-  const { places, isLoading, error, reload } = state;
+function HeroSection() {
   const [stats, setStats] = useState(null);
   const [offset, setOffset] = useState(0);
   const season = useMemo(() => getSeason(), []);
-  const placesToShow = places.slice(0, 4);
-
-  if (error) {
-    return (
-      <div className="relative overflow-hidden bg-canvas py-16 font-sans antialiased selection:bg-brand-100 sm:py-20 lg:py-24">
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-32 -top-28 h-[440px] w-[440px] rounded-full bg-brand-200/40 blur-3xl animate-voy-drift"
-        />
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-28 top-16 h-[400px] w-[400px] rounded-full bg-mint-200/40 blur-3xl animate-voy-float-slow"
-        />
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-1/3 h-[280px] w-[280px] rounded-full bg-sun-200/25 blur-3xl animate-voy-float"
-        />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm text-ink-500">İstiqamətlər yüklənmədi.</p>
-            <button
-              type="button"
-              onClick={reload}
-              className="mt-4 rounded-full bg-ink-900 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-ink-800 active:scale-95"
-            >
-              Yenidən cəhd et
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // GET /api/homepage/stats (açıq endpoint). Xəta olsa rəqəmlərin yerində "—" qalır.
   useEffect(() => {
@@ -89,40 +85,6 @@ function HeroSection({ state, imagePlan }) {
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="relative overflow-hidden bg-canvas py-16 font-sans antialiased selection:bg-brand-100 sm:py-20 lg:py-24">
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-32 -top-28 h-[440px] w-[440px] rounded-full bg-brand-200/40 blur-3xl animate-voy-drift"
-        />
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-28 top-16 h-[400px] w-[400px] rounded-full bg-mint-200/40 blur-3xl animate-voy-float-slow"
-        />
-        <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-1/3 h-[280px] w-[280px] rounded-full bg-sun-200/25 blur-3xl animate-voy-float"
-        />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-8">
-            <div className="flex flex-col items-start space-y-6 lg:col-span-7">
-              <div className="h-32 w-full max-w-md rounded-2xl bg-slate-200" />
-            </div>
-            <div className="lg:col-span-5">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="aspect-[4/3] rounded-2xl bg-slate-200" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
       <div className="relative overflow-hidden bg-canvas py-16 font-sans antialiased selection:bg-brand-100 sm:py-20 lg:py-24">
@@ -247,7 +209,7 @@ function HeroSection({ state, imagePlan }) {
                     className="grid grid-cols-2 gap-3 sm:gap-4"
                     style={{ transform: `translateY(${offset * -0.035}px)` }}
                 >
-                  {placesToShow.map((item, index) => (
+                  {HERO_DESTINATIONS.map((item, index) => (
                       <div
                           key={item.id}
                           className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-200 shadow-soft ring-1 ring-white/60 transition-all duration-500 hover:shadow-lift"
@@ -255,12 +217,13 @@ function HeroSection({ state, imagePlan }) {
                             animation: `voy-fade-up 0.7s var(--ease-out-expo) ${index * 0.12}s both`,
                           }}
                       >
-                        <DestinationImage
-                            image={getPlanImage(imagePlan, "hero", item)}
-                            candidates={item.images}
-                            src={item.imageUrl}
+                        <img
+                            src={item.image}
                             alt={item.title}
-                            className="absolute inset-0 h-full w-full"
+                            loading={index === 0 ? "eager" : "lazy"}
+                            decoding="async"
+                            draggable="false"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                         />
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -319,10 +282,5 @@ function HeroSection({ state, imagePlan }) {
       </div>
   );
 }
-
-HeroSection.propTypes = {
-  state: sectionStateShape.isRequired,
-  imagePlan: imagePlanShape,
-};
 
 export default HeroSection;
