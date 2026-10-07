@@ -19,6 +19,7 @@ import {
 } from "../../utils/format";
 import { normaliseImageUrl } from "../../utils/destinations";
 
+
 /** /travel/:planId — GET /api/plans/{id} ilə real planı göstərir. */
 function TravelItineraryPage() {
   const { planId } = useParams();
@@ -30,6 +31,7 @@ function TravelItineraryPage() {
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showBudgetInfo, setShowBudgetInfo] = useState(false);
 
   const cancelled = useRef(false);
   const claimTried = useRef(false);
@@ -133,7 +135,7 @@ function TravelItineraryPage() {
   // AI planının istiqaməti əvvəlcədən təyin edilməmiş ola bilər (Greenland, Svalbard, ...),
 // ona görə şəkli backend `plan.imageUrl` ilə göndərir — frontend heç bir lokal
 // şəkil saxlamır və istiqamətə görə şəkil seçmir.
-const currentImage = normaliseImageUrl(plan.imageUrl);
+  const currentImage = normaliseImageUrl(plan.imageUrl);
   const dateRange = formatDateRange(plan.startDate, plan.endDate);
   const companionLabel = plan.companion ? COMPANION_LABELS[plan.companion] : null;
   const total = plan.budgetSummary?.total;
@@ -157,15 +159,15 @@ const currentImage = normaliseImageUrl(plan.imageUrl);
             {/* Wishlist button — həmişə görünür; istiqamət tapılmazsa sıradan çıxmış olur */}
             <FavoriteButton
                 place={{
-                    id: plan.destinationId,
-                    title: plan.destination,
-                    subtitle: "",
-                    imageUrl: plan.imageUrl,
-                    images: plan.images,
+                  id: plan.destinationId,
+                  title: plan.destination,
+                  subtitle: "",
+                  imageUrl: plan.imageUrl,
+                  images: plan.images,
                 }}
                 size="md"
                 variant="glass"
-                className="absolute top-3.5 right-3.5"
+                className="absolute top-3.5 right-3.5 z-30"
             />
 
             <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/40 to-transparent p-6 sm:p-8">
@@ -196,10 +198,46 @@ const currentImage = normaliseImageUrl(plan.imageUrl);
                     )}
 
                     {total != null && (
-                        <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 backdrop-blur-sm">
-                      <span aria-hidden="true">💰</span>
-                      Təxmini {formatAzn(total)}
-                    </span>
+                        <div className="relative">
+                          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 backdrop-blur-sm">
+                            <span aria-hidden="true">💰</span>
+                            Təxmini {formatAzn(total)}
+
+                            {/* Yalnız bu wrapper hover-i dinləyir (i iconu) */}
+                            <span
+                                className="relative ml-0.5 flex shrink-0 items-center"
+                                onMouseEnter={() => setShowBudgetInfo(true)}
+                                onMouseLeave={() => setShowBudgetInfo(false)}
+                            >
+                              <button
+                                  type="button"
+                                  onClick={() => setShowBudgetInfo((prev) => !prev)}
+                                  onFocus={() => setShowBudgetInfo(true)}
+                                  onBlur={() => setShowBudgetInfo(false)}
+                                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/70 text-[10px] font-bold leading-none text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:outline-none"
+                                  aria-label="Büdcə haqqında məlumat"
+                                  aria-describedby={showBudgetInfo ? "budget-info-tooltip" : undefined}
+                              >
+                                i
+                              </button>
+
+                              {showBudgetInfo && (
+                                  <div
+                                      id="budget-info-tooltip"
+                                      role="tooltip"
+                                      className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 w-64 -translate-y-1/2 rounded-xl border border-slate-100 bg-white p-3 text-left text-xs font-normal leading-relaxed text-ink-600 shadow-card"
+                                  >
+                                    <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-slate-100 bg-white" />
+                                    <span className="font-semibold text-ink-900">
+                                      Büdcə təxminidir.
+                                    </span>{" "}
+                                    Seçdiyiniz maraqlar, fəaliyyətlər və səyahət
+                                    seçimlərinə görə ümumi xərc dəyişə bilər.
+                                  </div>
+                              )}
+                            </span>
+                          </span>
+                        </div>
                     )}
                   </div>
                 </div>

@@ -72,7 +72,7 @@ function DestinationCard({
                     )}
 
                     {/* Top-right favorite button */}
-                    <div className="absolute right-4 top-4">
+                    <div className="absolute right-4 top-4 z-30">
                         <FavoriteButton place={place} size="sm" />
                     </div>
 
@@ -100,7 +100,7 @@ function DestinationCard({
                             className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100"
                             aria-hidden="true"
                         >
-                            Explore
+                            Kəşf et
                             <span aria-hidden="true">→</span>
                         </span>
                     </div>

@@ -1,176 +1,261 @@
-import PropTypes from "prop-types";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { toggleFavorite } from "../../../redux/wishlistThunks";
+import { usePlanner } from "../../../context/plannerContext";
 import { useAuth } from "../../../context/authContext";
 import { useAuthModal } from "../../../context/authModalContext";
-import { usePlanner } from "../../../context/plannerContext";
-import { getDestinationDetails } from "../../../utils/destinationDetails";
-import { getPlanImage } from "../../../utils/imageAssignment";
-import { seasonStatus } from "../../../utils/season";
-import SectionHeading from "../../../components/common/SectionHeading";
-import PostcardCard from "../../../components/common/PostcardCard";
 import Reveal from "../../../components/common/Reveal";
-import { CardSkeleton, EmptyState, ErrorState } from "../../../components/common/States";
-import { imagePlanShape, sectionStateShape } from "./PopularPlaces";
+import { PERSONALIZED_JOURNEY } from "../../../data/personalizedJourney";
+import "./PersonalizedPlaces.css";
+
 
 /**
- * "Sənin üçün seçilmiş yerlər" / "Sənə xüsusi təkliflər" bölməsi — YALNIZ daxil olmuşlar.
- *
- * Məlumat mənbəyi dəyişməyib: `GET /api/recommendations/personalized` (backend
- * `@PreAuthorize("isAuthenticated()")` ilə qorunur). React yalnız göstərir:
- *   • gonaq        → heç bir sorğu göndərilmir, qeydiyyat promptu (CTA: "Qeydiyyatdan keç")
- *   • daxil olmuş  → backend-in qaytardığı istiqamətlər + hər birinin `imageUrl`-i
- *   • 401/403      → sessiya bitibsə eyni qeydiyyat promptu
- *
- * Tövsiyə seçimi və şəkil seçimi tamamilə backend-dədir — burada hesablanmır.
+ * "SƏNƏ ÖZƏL SƏYAHƏT MARŞRUTU" — 100% lokal, frontend-only.
+ * 11 istiqamət, eyni anda 4-ü görünür, ~7.5 saniyədən bir sakit keçid.
+ * Heç bir API sorğusu yoxdur. Bütün mətnlər Azərbaycanca.
+ * Kartları görmək üçün daxil olmaq tələb olunur.
  */
-function PersonalizedPlaces({ state, imagePlan }) {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const { openLogin } = useAuthModal();
-  const { openPlanner } = usePlanner();
+const ROTATE_MS = 7500;
+const EXIT_MS = 750;
+const VISIBLE_COUNT = 4;
 
-  // Məlumat artıq HomePage tərəfindən `source: "personalized"` ilə gəlir
-  const { places, isLoading, error, authRequired, reload } = state;
-
-  // Ən çox uyğun gələn 4 istiqamət
-  const top = places.slice(0, 4);
-
-  return (
-    <section
-      id="start-planning"
-      className="relative overflow-hidden bg-canvas py-20 lg:py-24"
-    >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-24 top-1/3 h-72 w-72 rounded-full bg-brand-100/40 blur-3xl"
-      />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
-          <SectionHeading
-            eyebrow={{ text: "Sənə xüsusi", tone: "brand", icon: "✨" }}
-            title="Sənə xüsusi təkliflər"
-            description={
-              authRequired
-                ? "Maraq dairən və keçmiş seçimlərin əsasında hazırladığımız istiqamətlər üçün hesab yarat."
-                : "Maraq dairən və keçmiş seçimlərin əsasında hazırladığımız istiqamətlər."
-            }
-          />
-
-          <Reveal delay={200}>
-            <button
-              type="button"
-              onClick={openPlanner}
-              className="group inline-flex shrink-0 items-center gap-2 rounded-full bg-ink-900 px-6 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:bg-ink-800 active:scale-95"
-            >
-              <span>Öz planımı yarat</span>
-              <span
-                className="transition-transform duration-300 group-hover:translate-x-1"
-                aria-hidden="true"
-              >
-                →
-              </span>
-            </button>
-          </Reveal>
-        </div>
-
-        {/* yüklənir */}
-        {isLoading && <CardSkeleton count={4} className="mt-12" />}
-
-        {/* gonaq / sessiya bitib → qeydiyyat promptu */}
-        {authRequired && (
-          <div className="mt-12 overflow-hidden rounded-4xl border border-brand-100 bg-gradient-to-br from-white via-brand-50/60 to-mint-50/70 px-6 py-14 text-center shadow-soft sm:px-12">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-soft ring-1 ring-slate-100">
-              <span aria-hidden="true">✨</span>
-            </div>
-
-            <h3 className="text-xl font-extrabold tracking-tight text-ink-900 sm:text-2xl">
-              Sənin üçün seçilmiş yerlər
-            </h3>
-
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-500">
-              Bu bölmə yalnız hesabına daxil olmuş istifadəçilər üçündür.
-              Pulsuz qeydiyyatdan keç, maraq dairənə uyğun istiqamətləri gör.
-            </p>
-
-            <button
-              type="button"
-              onClick={openLogin}
-              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-ink-900 px-7 py-3.5 text-sm font-semibold text-white shadow-soft transition-all duration-300 hover:bg-ink-800 active:scale-95"
-            >
-              <span>Qeydiyyatdan keç</span>
-              <span
-                className="transition-transform duration-300 group-hover:translate-x-1"
-                aria-hidden="true"
-              >
-                →
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* xəta */}
-        {!isLoading && !authRequired && error && (
-          <ErrorState className="mt-12" message={error} onRetry={reload} />
-        )}
-
-        {/* backend boş siyahı qaytardı */}
-        {!isLoading && !authRequired && !error && top.length === 0 && (
-          <EmptyState
-            className="mt-12"
-            icon="🧭"
-            title="Hələ istiqamət yoxdur"
-            description="Bir az sonra qayıt — sənin üçün uyğun yerlər hazırlanır."
-          />
-        )}
-
-        {/* kartlar */}
-        {!isLoading && !authRequired && !error && top.length > 0 && (
-          <>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {top.map((place, index) => {
-                const status = seasonStatus(
-                  getDestinationDetails(place).bestMonths
-                );
-
-                return (
-                  <Reveal key={place.id} delay={index * 90}>
-                    <PostcardCard
-                      place={place}
-                      image={getPlanImage(imagePlan, "personalized", place)}
-                      zoomable
-                      onOpenDetails={(id) => navigate(`/destination/${id}`)}
-                      onPlan={
-                        isAuthenticated ? openPlanner : () => openLogin()
-                      }
-                      badge={
-                        status.state === "peak" ? (
-                          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-mint-500/90 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
-                            <span aria-hidden="true">✨</span>
-                            Ən yaxşı vaxt
-                          </span>
-                        ) : null
-                      }
-                    />
-                  </Reveal>
-                );
-              })}
-            </div>
-
-            {/* mobil üçün ipucu */}
-            <p className="mt-8 text-center text-xs text-ink-400 sm:hidden">
-              Kartı çevirmək üçün üzərinə toxun
-            </p>
-          </>
-        )}
-      </div>
-    </section>
-  );
+function shuffledQueue(list) {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
-PersonalizedPlaces.propTypes = {
-  state: sectionStateShape.isRequired,
-  imagePlan: imagePlanShape,
-};
+/** Lokal istiqamət → wishlist/favorilər səhifəsinin gözlədiyi `place` formatı. */
+function toFavoritePlace(dest) {
+  return {
+    id: dest.id,
+    title: `${dest.city}, ${dest.country}`,
+    subtitle: dest.tags?.[0] ?? null,
+    imageUrl: dest.image,
+    images: [],
+  };
+}
+
+function PersonalizedPlaces() {
+  const planner = usePlanner();
+  const openPlanner = planner?.openPlanner;
+  const { isAuthenticated, isLoading } = useAuth();
+  const { openLogin } = useAuthModal();
+  const isLocked = !isLoading && !isAuthenticated;
+
+  const dispatch = useDispatch();
+  const favorites = useSelector((state) => state.wishlist.favorites);
+  const isFavorite = (id) => favorites.some((item) => item.id === id);
+
+  const handleHeart = (e, dest) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      openLogin();
+      return;
+    }
+    dispatch(toggleFavorite(toFavoritePlace(dest)));
+  };
+
+  const [queue, setQueue] = useState(() => shuffledQueue(PERSONALIZED_JOURNEY));
+  const [start, setStart] = useState(0);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const timers = useRef({ tick: null, swap: null });
+
+  const visible = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < VISIBLE_COUNT; i += 1) out.push(queue[(start + i) % queue.length]);
+    return out;
+  }, [queue, start]);
+
+  const advance = useCallback(() => {
+    setIsLeaving(true);
+    timers.current.swap = window.setTimeout(() => {
+      setStart((prev) => {
+        const next = (prev + VISIBLE_COUNT) % queue.length;
+        if (next === 0) setQueue(shuffledQueue(PERSONALIZED_JOURNEY));
+        return next;
+      });
+      setIsLeaving(false);
+    }, EXIT_MS);
+  }, [queue.length]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    if (isPaused || selected || !isAuthenticated) return undefined;
+    const activeTimers = timers.current;
+    activeTimers.tick = window.setTimeout(advance, ROTATE_MS);
+    return () => {
+      window.clearTimeout(activeTimers.tick);
+      window.clearTimeout(activeTimers.swap);
+    };
+  }, [advance, isPaused, isAuthenticated, selected, start, queue]);
+
+  useEffect(() => () => {
+    window.clearTimeout(timers.current.tick);
+    window.clearTimeout(timers.current.swap);
+  }, []);
+
+
+  const openDetails = useCallback((dest) => {
+    if (!dest) return;
+    if (!isAuthenticated) {
+      openLogin();
+      return;
+    }
+    setSelected(dest);
+  }, [isAuthenticated, openLogin]);
+
+  useEffect(() => {
+    if (!selected) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setSelected(null); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [selected]);
+
+  // Token bərpa olunarkən kilid ekranı yanıb-sönməsin
+  if (isLoading) return null;
+
+  return (
+      <section id="sene-ozel-marsrut" aria-labelledby="journey-title" className="voy-journey py-20 lg:py-28">
+        <svg className="voy-journey-route hidden lg:block" viewBox="0 0 1200 120" fill="none" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-20 78 C 180 20, 320 108, 520 62 S 860 18, 1220 72" stroke="rgba(255,255,255,0.22)" strokeWidth="1.6" strokeDasharray="2 9" strokeLinecap="round" />
+        </svg>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <Reveal className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em]">
+                <span className="text-sun-300"><span className="mr-1">✦</span>Sənə özəl kəşf</span>
+              </Reveal>
+              <Reveal delay={70}><h2 id="journey-title" className="text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">Bəlkə də axtardığın yer elə buradadır.</h2></Reveal>
+              <Reveal delay={140}><p className="mt-3 max-w-xl text-base leading-relaxed text-white/60 sm:text-[17px]">Səyahət tərzinə uyğun ola biləcək bir neçə yeri sənin üçün seçdik.</p></Reveal>
+            </div>
+            {isAuthenticated && (
+                <Reveal delay={200} className="flex shrink-0 items-center gap-3">
+                  <button type="button" onClick={() => setIsPaused((p) => !p)} aria-pressed={isPaused} aria-label={isPaused ? "Avtomatik keçidi davam etdir" : "Avtomatik keçidi dayandır"} className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/5 text-base text-white/80 transition-all duration-300 hover:bg-white/10 active:scale-95">{isPaused ? "▶" : "⏸"}</button>
+                  {openPlanner && (<button type="button" onClick={openPlanner} className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-ink-900 transition-all duration-300 hover:bg-brand-50 active:scale-95"><span>Öz planımı yarat</span><span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">→</span></button>)}
+                </Reveal>
+            )}
+          </div>
+          {/* GRID2 */}
+          <Reveal delay={120}>
+            <div className="relative mt-12">
+              <div
+                  className={`voy-journey-grid ${isLeaving ? "is-leaving" : ""} ${isLocked ? "pointer-events-none select-none blur-md" : ""}`}
+                  role="list"
+                  aria-label="Sənə özəl istiqamətlər"
+                  aria-hidden={isLocked || undefined}
+              >
+                {visible.map((dest, i) => (
+                    <article key={`${dest.id}-${start}-${i}`} role="listitem" className={`voy-journey-card voy-stop-${i} relative`}>
+                      <button
+                          type="button"
+                          tabIndex={isLocked ? -1 : 0}
+                          onClick={(e) => handleHeart(e, dest)}
+                          aria-pressed={isFavorite(dest.id)}
+                          aria-label={isFavorite(dest.id) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                          className={`absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border shadow-lg transition-all duration-300 hover:scale-110 active:scale-90 ${
+                              isFavorite(dest.id)
+                                  ? "border-white bg-white text-red-500"
+                                  : "border-white/30 bg-ink-900/55 text-white backdrop-blur-md hover:bg-ink-900/75"
+                          }`}
+                      >
+                        {isFavorite(dest.id) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
+                      </button>
+                      <span className="voy-journey-node hidden lg:flex" aria-hidden="true" />
+                      <button type="button" tabIndex={isLocked ? -1 : 0} onClick={() => openDetails(dest)} aria-label={`${dest.city}, ${dest.country} — ${dest.headline}`} className="voy-journey-frame group">
+                        <img src={dest.image} alt={dest.alt} loading={i === 0 ? "eager" : "lazy"} decoding="async" draggable="false" />
+                        <span className="voy-journey-shade" aria-hidden="true" />
+                        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/90" aria-hidden="true"><span className="text-sun-400">✦</span>Dayanacaq 0{i + 1}</span>
+                        <span className="absolute inset-x-0 bottom-0 block p-5 sm:p-6">
+                      <span className="voy-journey-default block">
+                        <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">{dest.country}</span>
+                        <span className="mt-1 block text-2xl font-extrabold tracking-tight text-white">{dest.city}</span>
+                      </span>
+                      <span className="voy-journey-hover mt-1 block">
+                        <span className="block text-lg font-extrabold leading-snug text-white">{dest.headline}</span>
+                        <span className="mt-2 block text-sm leading-relaxed text-white/75">{dest.description}</span>
+                        <span className="mt-3 flex flex-wrap gap-1.5">{dest.tags.map((t) => (<span key={t} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/90">{t}</span>))}</span>
+                        <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-sun-300">Daha çox kəşf et <span aria-hidden="true">→</span></span>
+                      </span>
+                    </span>
+                      </button>
+                    </article>
+                ))}
+              </div>
+
+              {isLocked && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
+                    <div className="w-full max-w-sm rounded-4xl border border-white/10 bg-white p-8 text-center shadow-soft">
+                      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-3xl">
+                        🔒
+                      </div>
+                      <h3 className="text-xl font-extrabold tracking-tight text-ink-900">
+                        Sənə özəl marşrutu gör
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-ink-500">
+                        Sənin üçün seçilmiş istiqamətləri görmək üçün Google hesabınla daxil ol.
+                      </p>
+                      <button
+                          type="button"
+                          onClick={openLogin}
+                          className="mt-7 w-full rounded-full bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white shadow-glow transition-all duration-300 hover:bg-brand-600 active:scale-95"
+                      >
+                        Daxil ol
+                      </button>
+                    </div>
+                  </div>
+              )}
+            </div>
+          </Reveal>
+          {isAuthenticated && (
+              <p className="mt-6 text-center text-xs text-white/40 lg:hidden">Kartı seç — sənin üçün nə hazırladığımızı gör</p>
+          )}
+
+          {selected && (
+              <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={`${selected.city} ətraflı məlumat`} onClick={() => setSelected(null)}>
+                <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white shadow-lift sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-200 sm:rounded-t-3xl">
+                    <img src={selected.image} alt={selected.alt} className="absolute inset-0 h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
+                    <button
+                        type="button"
+                        onClick={(e) => handleHeart(e, selected)}
+                        aria-pressed={isFavorite(selected.id)}
+                        aria-label={isFavorite(selected.id) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                        className={`absolute right-16 top-4 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 active:scale-90 ${
+                            isFavorite(selected.id) ? "bg-white text-red-500" : "bg-ink-900/55 text-white"
+                        }`}
+                    >
+                      {isFavorite(selected.id) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
+                    </button>
+                    <button type="button" onClick={() => setSelected(null)} aria-label="Bağla" autoFocus className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-ink-900/55 text-lg font-bold text-white">✕</button>
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/75">{selected.country}</p>
+                      <h3 className="mt-1 text-2xl font-extrabold text-white">{selected.city}</h3>
+                    </div>
+                  </div>
+                  <div className="space-y-5 p-5 sm:p-6">
+                    <p className="text-lg font-extrabold leading-snug text-ink-900">{selected.headline}</p>
+                    <p className="text-sm leading-relaxed text-ink-600">{selected.description}</p>
+                    <div className="flex flex-wrap gap-2">{selected.tags.map((t) => (<span key={t} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-ink-700">{t}</span>))}</div>
+                    {openPlanner && (<button type="button" onClick={() => { setSelected(null); openPlanner(); }} className="w-full rounded-full bg-ink-900 px-6 py-3.5 text-sm font-bold text-white">Bu ruhda plan yarat →</button>)}
+                  </div>
+                </div>
+              </div>
+          )}
+        </div>
+      </section>
+  );
+}
 
 export default PersonalizedPlaces;

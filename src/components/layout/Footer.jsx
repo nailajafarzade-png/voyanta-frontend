@@ -99,10 +99,10 @@ function Footer() {
             </div>
 
             {/* Linklər */}
-            <div className="grid grid-cols-2 gap-10 sm:gap-16">
+            <div className=" gap-10 sm:gap-16">
               <div>
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-400">
-                  Keşid
+                  Keçid
                 </h3>
                 <ul className="mt-4 space-y-2.5">
                   {FOOTER_LINKS.map((link) => (
@@ -118,23 +118,7 @@ function Footer() {
                 </ul>
               </div>
 
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-400">
-                  Hüquqi
-                </h3>
-                <ul className="mt-4 space-y-2.5">
-                  {FOOTER_LINKS_TEXT.map((link) => (
-                    <li key={link.label}>
-                      <a
-                        href={link.href}
-                        className="text-sm text-ink-600 transition-colors duration-200 hover:text-brand-600"
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+
             </div>
           </div>
 

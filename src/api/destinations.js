@@ -24,19 +24,6 @@ export async function getDestinationsByIds(ids) {
 }
 
 /**
- * GET /api/destinations?season=<season>&limit=4 — auth tələb olunmur.
- */
-export async function getDestinationsBySeason(season, limit) {
-    const response = await api.get("/destinations", {
-        params: {
-            ...(season ? { season } : {}),
-            ...(limit ? { limit } : {}),
-        },
-    });
-    return unwrap(response) ?? [];
-}
-
-/**
  * GET /api/destinations/popular — açıq endpoint.
  *
  * Ən çox favoriləşdirilən istiqamətlər. Reytinq yalnız backend-də hesablanır;

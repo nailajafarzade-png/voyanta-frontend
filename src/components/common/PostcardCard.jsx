@@ -2,6 +2,7 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DestinationImage from "./DestinationImage";
+import FavoriteButton from "./FavoriteButton";
 import { getDestinationDetails } from "../../utils/destinationDetails";
 import { monthRange, seasonStatus } from "../../utils/season";
 
@@ -65,6 +66,12 @@ function PostcardCard({
           )}
 
           {badge}
+
+          {/* Favorite heart — overlay on the image, above gradients (z-30).
+              stopPropagation lives inside FavoriteButton, so the card never flips/navigates. */}
+          <div className="absolute right-4 top-4 z-30">
+            <FavoriteButton place={place} size="sm" />
+          </div>
 
           <div className="absolute inset-x-0 bottom-0 p-5">
             <span className="mb-2 inline-block rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
