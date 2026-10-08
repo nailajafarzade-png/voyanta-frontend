@@ -125,15 +125,6 @@ function YourFavorites() {
               {favorites.map((place) => (
                 <div
                   key={place.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/destination/${place.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      navigate(`/destination/${place.id}`);
-                    }
-                  }}
                   className="
                     group
                     cursor-pointer

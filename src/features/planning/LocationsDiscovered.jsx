@@ -1,5 +1,4 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 import { toggleFavorite } from "../../redux/wishlistThunks";
@@ -18,12 +17,11 @@ import { CardSkeleton, EmptyState, ErrorState } from "../../components/common/St
  * göstərir, ona görə gonaq üçün qorunur: `requireAuth: true` — gonaq heç bir
  * sorğu göndərmir və qeydiyyat promptunu görür (401/403 halında eyni vəziyyət).
  *
- * Hər kart istiqamət səhifəsinə (PO #3) aparır, şəkli isə backend-in
+ * Kartlar heç bir səhifəyə keçmir (navigasiya yoxdur); şəkli isə backend-in
  * `imageUrl`-indən gəlir.
  */
 function LocationsDiscovered() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { openLogin } = useAuthModal();
   const { openPlanner } = usePlanner();
@@ -140,15 +138,6 @@ function LocationsDiscovered() {
               return (
                 <div
                   key={place.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/destination/${place.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      navigate(`/destination/${place.id}`);
-                    }
-                  }}
                   className="group cursor-pointer overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 >
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-200">

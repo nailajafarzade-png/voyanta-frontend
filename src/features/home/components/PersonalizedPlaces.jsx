@@ -6,6 +6,7 @@ import { usePlanner } from "../../../context/plannerContext";
 import { useAuth } from "../../../context/authContext";
 import { useAuthModal } from "../../../context/authModalContext";
 import Reveal from "../../../components/common/Reveal";
+import { useBackendPlaces } from "../../../hooks/useBackendPlaces";
 import { PERSONALIZED_JOURNEY } from "../../../data/personalizedJourney";
 import "./PersonalizedPlaces.css";
 
@@ -29,17 +30,6 @@ function shuffledQueue(list) {
   return arr;
 }
 
-/** Lokal istiqamət → wishlist/favorilər səhifəsinin gözlədiyi `place` formatı. */
-function toFavoritePlace(dest) {
-  return {
-    id: dest.id,
-    title: `${dest.city}, ${dest.country}`,
-    subtitle: dest.tags?.[0] ?? null,
-    imageUrl: dest.image,
-    images: [],
-  };
-}
-
 function PersonalizedPlaces() {
   const planner = usePlanner();
   const openPlanner = planner?.openPlanner;
@@ -49,7 +39,21 @@ function PersonalizedPlaces() {
 
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.wishlist.favorites);
-  const isFavorite = (id) => favorites.some((item) => item.id === id);
+
+  // Staqik slug (məs. "tromso") → backend-in real `place`-i (UUID).
+  // Mövcud `useBackendPlaces` rezolyutoru — LovedPlaceCard /
+  // SeasonDestinationCard ilə EYNİ mexanizm. Backend-də belə sətir
+  // yoxdursa heç bir saxta ID göndərilmir (favorit mümkün deyil).
+  const { resolveBackendPlace } = useBackendPlaces();
+  const backendPlaceOf = (dest) => resolveBackendPlace(dest?.city);
+
+  const isFavorite = (dest) => {
+    const backendPlace = backendPlaceOf(dest);
+    return (
+      Boolean(backendPlace?.id) &&
+      favorites.some((item) => item.id === backendPlace.id)
+    );
+  };
 
   const handleHeart = (e, dest) => {
     e.stopPropagation();
@@ -57,7 +61,9 @@ function PersonalizedPlaces() {
       openLogin();
       return;
     }
-    dispatch(toggleFavorite(toFavoritePlace(dest)));
+    const backendPlace = backendPlaceOf(dest);
+    if (!backendPlace) return;
+    dispatch(toggleFavorite(backendPlace));
   };
 
   const [queue, setQueue] = useState(() => shuffledQueue(PERSONALIZED_JOURNEY));
@@ -136,8 +142,7 @@ function PersonalizedPlaces() {
               <Reveal className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em]">
                 <span className="text-sun-300"><span className="mr-1">✦</span>Sənə özəl kəşf</span>
               </Reveal>
-              <Reveal delay={70}><h2 id="journey-title" className="text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">Bəlkə də axtardığın yer elə buradadır.</h2></Reveal>
-              <Reveal delay={140}><p className="mt-3 max-w-xl text-base leading-relaxed text-white/60 sm:text-[17px]">Səyahət tərzinə uyğun ola biləcək bir neçə yeri sənin üçün seçdik.</p></Reveal>
+              <Reveal delay={70}><h2 id="journey-title" className="text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">Seçilmiş yerlər</h2></Reveal>
             </div>
             {isAuthenticated && (
                 <Reveal delay={200} className="flex shrink-0 items-center gap-3">
@@ -161,15 +166,17 @@ function PersonalizedPlaces() {
                           type="button"
                           tabIndex={isLocked ? -1 : 0}
                           onClick={(e) => handleHeart(e, dest)}
-                          aria-pressed={isFavorite(dest.id)}
-                          aria-label={isFavorite(dest.id) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                          aria-pressed={isFavorite(dest)}
+                          aria-disabled={!backendPlaceOf(dest) || undefined}
+                          aria-label={isFavorite(dest) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                          title={backendPlaceOf(dest) ? undefined : "Bu yer üçün mövcud deyil"}
                           className={`absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border shadow-lg transition-all duration-300 hover:scale-110 active:scale-90 ${
-                              isFavorite(dest.id)
+                              isFavorite(dest)
                                   ? "border-white bg-white text-red-500"
                                   : "border-white/30 bg-ink-900/55 text-white backdrop-blur-md hover:bg-ink-900/75"
-                          }`}
+                          } ${backendPlaceOf(dest) ? "" : "cursor-not-allowed opacity-60"}`}
                       >
-                        {isFavorite(dest.id) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
+                        {isFavorite(dest) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
                       </button>
                       <span className="voy-journey-node hidden lg:flex" aria-hidden="true" />
                       <button type="button" tabIndex={isLocked ? -1 : 0} onClick={() => openDetails(dest)} aria-label={`${dest.city}, ${dest.country} — ${dest.headline}`} className="voy-journey-frame group">
@@ -230,13 +237,15 @@ function PersonalizedPlaces() {
                     <button
                         type="button"
                         onClick={(e) => handleHeart(e, selected)}
-                        aria-pressed={isFavorite(selected.id)}
-                        aria-label={isFavorite(selected.id) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                        aria-pressed={isFavorite(selected)}
+                        aria-disabled={!backendPlaceOf(selected) || undefined}
+                        aria-label={isFavorite(selected) ? "Favoritdən sil" : "Favoritlərə əlavə et"}
+                        title={backendPlaceOf(selected) ? undefined : "Bu yer üçün mövcud deyil"}
                         className={`absolute right-16 top-4 flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 active:scale-90 ${
-                            isFavorite(selected.id) ? "bg-white text-red-500" : "bg-ink-900/55 text-white"
-                        }`}
+                            isFavorite(selected) ? "bg-white text-red-500" : "bg-ink-900/55 text-white"
+                        } ${backendPlaceOf(selected) ? "" : "cursor-not-allowed opacity-60"}`}
                     >
-                      {isFavorite(selected.id) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
+                      {isFavorite(selected) ? <FaHeart className="h-5 w-5" /> : <FaRegHeart className="h-5 w-5" />}
                     </button>
                     <button type="button" onClick={() => setSelected(null)} aria-label="Bağla" autoFocus className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-ink-900/55 text-lg font-bold text-white">✕</button>
                     <div className="absolute inset-x-0 bottom-0 p-5">
