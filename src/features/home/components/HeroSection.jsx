@@ -3,6 +3,7 @@ import { getHomepageStats } from "../../../api/homepage";
 import { formatCount, formatRating } from "../../../utils/format";
 import { getSeason } from "../../../utils/season";
 import Reveal from "../../../components/common/Reveal";
+import { usePlanner } from "../../../context/plannerContext";
 
 import img1 from "../../../assets/srilanka.jpg";
 import img2 from "../../../assets/russia.jpg";
@@ -42,6 +43,7 @@ const HERO_DESTINATIONS = [
  * 4 istiqamət kolajı) saxlanılır. Kolaj lokal şəkillərdən qurulur.
  */
 function HeroSection() {
+  const { openPlanner } = usePlanner();
   const [stats, setStats] = useState(null);
   const [offset, setOffset] = useState(0);
   const season = useMemo(() => getSeason(), []);
@@ -162,6 +164,10 @@ function HeroSection() {
                 <div className="flex w-full flex-col items-start gap-4 pt-2 sm:w-auto sm:flex-row sm:items-center">
                   <a
                       href="#start-planning"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        openPlanner();
+                      }}
                       className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-brand-500 px-7 py-3.5 text-base font-semibold text-white shadow-glow transition-all duration-300 hover:bg-brand-600 active:scale-[0.97] sm:w-auto"
                   >
                     <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />

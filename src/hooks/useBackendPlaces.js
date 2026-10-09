@@ -31,12 +31,20 @@ export function normalisePlaceName(value) {
     .trim();
 }
 
-/** Static (English) spelling -> backend catalogue spelling(s). */
+/** Static card label -> backend catalogue spelling(s) (keys/values are normalised). */
 const NAME_ALIASES = {
   bangkok: ["banqkok"],
   seoul: ["seul"],
   prague: ["praqa"],
   vienna: ["vyana"],
+  // Card label != catalogue spelling (e.g. "Kioto" / "Kyoto"). Without the
+  // alias the heart gets no `id` and the click silently does nothing.
+  kioto: ["kyoto"],
+  barselona: ["barcelona"],
+  nyuyork: ["newyork"],
+  amalfisahili: ["amalfi"],
+  zenzibar: ["zanzibar"],
+  merrakes: ["marrakes"],
 };
 
 let cache = null; // { places, at }
@@ -57,7 +65,10 @@ function loadAll(includePersonalized) {
   inflight = (async () => {
     const settled = await Promise.allSettled([
       getFeaturedDestinations(),
-      getPopularDestinations(50),
+      // The resolver index must hold EVERY catalogue row (57+), not just the
+      // homepage window of 50 — otherwise e.g. "Zanzibar" never resolves and
+      // its heart gets no `id`.
+      getPopularDestinations(500),
       includePersonalized ? getPersonalizedDestinations(50) : Promise.resolve([]),
     ]);
     const seen = new Map();

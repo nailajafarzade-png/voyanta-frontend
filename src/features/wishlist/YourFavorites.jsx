@@ -235,9 +235,6 @@ function YourFavorites() {
                     </p>
 
                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
-                      <span className="text-xs font-medium text-ink-400">
-                        Ətraflı bax
-                      </span>
 
                       <span
                         className="
